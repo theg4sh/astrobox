@@ -18,6 +18,7 @@ class Cargo(object):
     def _clip_payload(self, batch):
         if self.__payload < batch:
             batch = self.__payload
+        batch = max(0, batch)
         self.__payload-=batch
         return batch
 
