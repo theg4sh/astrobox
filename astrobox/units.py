@@ -38,6 +38,9 @@ class Unit(GameObject):
     def on_stop(self):
         pass
 
+    def on_damage(self, victim=None, attacker=None):
+        pass
+
 class DroneUnit(Unit):
     rotate_mode = ROTATE_TURNING
     radius = 44
@@ -80,6 +83,10 @@ class DroneUnit(Unit):
         self.__death_animaion = self.__DeathAnimation(self)
 
     @property
+    def health(self):
+        return 0 if self.__health == 0 else self.__health/theme.DRONE_MAX_SHIELD
+
+    @property
     def have_gun(self):
         return self.__gun is not None
 
@@ -108,6 +115,9 @@ class DroneUnit(Unit):
     @property
     def is_alive(self):
         return self.__health > 0
+
+    def on_damage(self, victim=None, attacker=None):
+        pass
 
     def damage_taken(self, damage=0):
         #print(self.__class__.__name__+"::damage_taken", damage)

@@ -1,9 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from astrobox.units import DroneUnit, Unit
 
 class DroneUnitWithStrategies(DroneUnit):
     def __init__(self, **kwargs):
         super(DroneUnitWithStrategies, self).__init__(**kwargs)
         self.__strategies = []
+
+    @property
+    def current_strategy(self):
+        return self.__strategies[0] if not self.is_strategy_finished() else None
 
     def append_strategy(self, strategy):
         if strategy.is_group_unique:

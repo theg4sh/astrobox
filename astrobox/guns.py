@@ -116,6 +116,7 @@ class Projectile(GameObject):
         self.stop()
         self.state.stop()
         obj_status.damage_taken(theme.PROJECTILE_DAMAGE)
+        obj_status.add_event(EventUnitDamage(event_objs=obj_status, attacker=self.owner))
         if self.death_animation is not None:
             self.__attached = self.death_animation(projectile=self, target=obj_status, distance=int(obj_status.distance_to(self)/2),
                                                    direction=Vector.from_points(obj_status.coord, self.coord).direction,

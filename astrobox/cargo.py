@@ -65,7 +65,7 @@ class CargoTransition(object):
         self.__transition_speed = theme.CARGO_TRANSITION_SPEED
         if self.__transition_speed < 1:
             raise Exception("transition_speed should be greater than 0")
-        self.__done = False
+        self.__done = self.__transition_limit == 0
 
     @property
     def is_finished(self):
@@ -78,10 +78,6 @@ class CargoTransition(object):
             if self.cargo_from.owner.is_alive:
                 self.__done = True
                 return
-        # Неживые объекты не могут принимать
-        if not self.cargo_to.owner.is_alive:
-            self.__done = True
-            return
         # Ограничиваем дистанцию переноса
         if self.cargo_to.owner.distance_to(self.cargo_from.owner) > self.__distance:
             self.__done = True
@@ -89,9 +85,8 @@ class CargoTransition(object):
         # Берем максимально возможный кусок который
         # можем переместить за такт
         batch = min(self.__transition_speed,
-                    self.__transition_limit - self.__batch_processed,
                     self.cargo_to.free_space, self.cargo_from.payload)
-        if batch <= 0:
+        if batch <= 0 or self.cargo_to.is_full:
             self.__done = True
             return
         self.__batch_processed += self.cargo_to._transfer_payload(batch, self.cargo_from)
