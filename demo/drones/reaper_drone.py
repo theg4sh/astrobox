@@ -76,6 +76,8 @@ class ReaperStateUnload(ReaperState):
         super(ReaperStateUnload, self).__init__(strategy);
 
     def make_transition(self):
+        if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
+            return ReaperStateRunout
         if self.unit.cargo.is_empty:
             return ReaperStateIdle
         if self._transition and self._transition.is_finished:
@@ -84,11 +86,9 @@ class ReaperStateUnload(ReaperState):
 
     def game_step(self):
         if self._target is None:
-            target = self.strategy.getHarvestCollector()
+            target = self.strategy.getUnloadTarget()
             if target is None:
                 target = self.unit.mothership()
-            #self.strategy.setDroneHarvestTarget(self.unit, target)
-            #self.strategy.setDroneHarvestCollector(self.unit, target)
             self._target = getPointOnWayTo(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
             self._target_cargo = target.cargo
             self.unit.move_at(self._target)
@@ -98,9 +98,8 @@ class ReaperStateUnload(ReaperState):
             if target is None:
                 target = self.unit.mothership()
             self.unit.turn_to( target )
-        if self._transition is None and self.unit.distance_to(self._target) <= 1.0:
+        elif self.unit.distance_to(self._target) <= 1.0:
             self._transition = CargoTransition(cargo_from=self.unit.cargo, cargo_to=self._target_cargo)
-
 
 class ReaperStateHarvest(ReaperState):
     def __init__(self, strategy):
@@ -110,7 +109,7 @@ class ReaperStateHarvest(ReaperState):
         super(ReaperStateHarvest, self).__init__(strategy);
 
     def make_transition(self):
-        if self.unit.health < 0.75:
+        if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
             return ReaperStateRunout
         if self.unit.cargo.is_full:
             return ReaperStateUnload
@@ -136,7 +135,7 @@ class ReaperStateHarvest(ReaperState):
                 return
         if self._transition:
             self._transition.game_step()
-            target = self.strategy.getHarvestCollector()
+            target = self.strategy.getUnloadTarget()
             if target:
                 self.unit.turn_to( target )
             else:
@@ -150,7 +149,7 @@ class ReaperStateAttack(ReaperState):
         super(ReaperStateAttack, self).__init__(strategy);
 
     def make_transition(self):
-        if self.unit.health < 0.75:
+        if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
             return ReaperStateRunout
         if len([d for d in self.unit.teammates if d.health < 1.0]) > 0:
             return self.__class__
@@ -162,9 +161,9 @@ class ReaperStateRunout(ReaperState):
         self._target = None
 
     def make_transition(self):
-        if self.unit.health < 0.50:
-            return self.__class__
-        return ReaperStateIdle
+        if self.unit.health > 0.75:
+            return ReaperStateIdle
+        return self.__class__
 
     def game_step(self):
         if self._target is None:
@@ -298,16 +297,12 @@ class ReaperStrategy(Strategy):
     def getHarvestTarget(self):
         uclosest = self.unit.pathfind.get_closest(self.unit)
 
+        k = math.sqrt(theme.FIELD_HEIGHT*theme.FIELD_HEIGHT + theme.FIELD_HEIGHT*theme.FIELD_WIDTH)
         # TODO: do better choice than a fattest asteroid
         fat_ast = self.unit.scene.asteroids
-        while len(fat_ast)>1:
-            if fat_ast[0].cargo.payload > fat_ast[1].cargo.payload:
-                fat_ast.pop(1)
-            else:
-                fat_ast.pop(0)
+        fat_ast.sort(key=lambda a: a.cargo.payload, reverse=True)
         fat_ast = fat_ast[0]
 
-        k = math.sqrt(theme.FIELD_HEIGHT*theme.FIELD_HEIGHT + theme.FIELD_HEIGHT*theme.FIELD_WIDTH)
         def weight_func(a, b):
             if a.distance_to(b) > ReaperStrategy._distance_limit:
                 return float("inf")
@@ -326,15 +321,15 @@ class ReaperStrategy(Strategy):
         #print("Team {}:{} #{},{} path[{}] target #{}: {}".format(self.unit.team, self.unit.id, pos, idx, "harv", idx, path[idx]))
         return path[idx]
 
-    def getHarvestCollector(self):
+    def getUnloadTarget(self):
         if len([a for a in self.unit.scene.asteroids if a.cargo.payload>0])==0:
             return self.unit.mothership()
         k = math.sqrt(theme.FIELD_HEIGHT*theme.FIELD_HEIGHT + theme.FIELD_HEIGHT*theme.FIELD_WIDTH)
         def weight_func(a, b):
             if a.distance_to(b) > ReaperStrategy._distance_limit:
                 return float("inf")
-            coef =   [k,                       1.0]
-            values = [float(a.distance_to(b)), 1.0-b.cargo.fullness]
+            coef =   [1.0, 1.0]
+            values = [float(self.unit.distance_to(self.unit.mothership()))/float(a.distance_to(b)), 1.0-b.cargo.fullness]
             return sum(map(mul, coef, values))
         self.unit.pathfind_unload.calc_weights(func=weight_func)
 
@@ -345,7 +340,7 @@ class ReaperStrategy(Strategy):
         sz = len(path_unload)
         idx = (pos % (sz-1)) + 1 if sz>1 else 0
         #print("Team {}:{} #{},{} path[{}] target #{}: {}".format(self.unit.team, self.unit.id, pos, idx, "unld", idx, path_unload[idx]))
-        return path_unload[idx]
+        return path_unload[-idx]
 
     def _find_closest_elerium(self, unit, units):
         our_mothership = self.unit.mothership()
