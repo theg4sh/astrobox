@@ -133,6 +133,7 @@ class DroneUnit(Unit):
         if self.__mothership is None:
             self.__mothership = self.scene.get_mothership(self.team)
             assert self.__mothership is not None
+        assert self.__mothership.team == self.team
         return self.__mothership
 
     def __dead_game_step(self):

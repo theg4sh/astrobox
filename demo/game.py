@@ -19,10 +19,10 @@ from astrobox.units import DroneUnit #, Unit
 
 from demo.drones.reaper_drone import ReaperDrone
 
-class NoobDrone(DroneUnit):
+class NoobDrone(ReaperDrone):
     pass
 
-class NoobDroneFoo(DroneUnit):
+class NoobDroneFoo(ReaperDrone):
     pass
 
 if __name__ == '__main__':
