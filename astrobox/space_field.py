@@ -38,9 +38,14 @@ class SpaceField(Scene):
         self.__motherships = {}
         self.__asteroids = []
         self.__drones = []
+        self.__max_elerium = 0.0
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(SpaceField, self).__init__(*args, **kwargs)
+
+    @property
+    def max_elerium(self):
+        return self.__max_elerium
 
     def prepare(self, asteroids_count=5):
         self._fill_space(
@@ -64,9 +69,9 @@ class SpaceField(Scene):
 
     def _fill_space(self, asteroids_count):
         field = Rect(w=theme.FIELD_WIDTH, h=theme.FIELD_HEIGHT)
-        field.reduce(dw=MotherShip.radius * 2, dh=MotherShip.radius * 2)
+        field.reduce(dw=MotherShip.radius * 2.1, dh=MotherShip.radius * 2.1)
         if self.teams_count >= 2:
-            field.reduce(dw=MotherShip.radius * 2)
+            field.reduce(dw=MotherShip.radius * 2.1)
         #if self.teams_count >= 3:
         #    field.reduce(dh=MotherShip.radius * 2)
         if field.w < MotherShip.radius or field.h < MotherShip.radius:
@@ -138,6 +143,7 @@ class SpaceField(Scene):
         max_elerium = round(sum(asteroid_payloads) * 1.5 / theme.TEAMS_COUNT, -2)
         if max_elerium < 1000:
             max_elerium = 1000
+        self.__max_elerium = max_elerium
 
         for droneClass in self.teams:
             team = self.get_team(droneClass)

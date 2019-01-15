@@ -116,14 +116,12 @@ class DroneUnit(Unit):
     def is_alive(self):
         return self.__health > 0
 
-    def on_damage(self, victim=None, attacker=None):
-        pass
-
-    def damage_taken(self, damage=0):
+    def damage_taken(self, damage=0, attacker=None):
         #print(self.__class__.__name__+"::damage_taken", damage)
         self.__health = max(self.__health-damage, 0)
         if self.__health<=0:
             self.stop()
+        self.on_damage(attacker=attacker)
 
     def __heal_taken(self, healed_on=0):
         if self.__health>0:
@@ -285,8 +283,9 @@ class MotherShip(Unit):
     def is_alive(self):
         return self.__health > 0
 
-    def damage_taken(self, damage=0):
+    def damage_taken(self, damage=0, attacker=None):
         self.__health = max(self.__health-damage, 0)
+        self.on_damage(attacker=attacker)
 
     def __heal_taken(self, healed_on=0):
         if self.__health>0:
