@@ -17,7 +17,7 @@ from demo.drones.destroyer_drone import DestroyerDrone
 if __name__ == '__main__':
     space_field = SpaceField(
         name="Space war",
-        speed=1,
+        speed=5,
         field=(1600, 800),
         asteroids_count=20,
     )
