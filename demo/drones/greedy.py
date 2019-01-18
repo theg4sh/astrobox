@@ -2,7 +2,7 @@
 
 import random
 
-from demo.drones.worker_drone import WorkerDrone
+from demo.drones.worker import WorkerDrone
 
 
 class GreedyDrone(WorkerDrone):

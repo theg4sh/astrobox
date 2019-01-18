@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from astrobox.utils import nearest_angle_distance
-from demo.drones.greedy_drone import GreedyDrone
-from demo.drones.worker_drone import WorkerDrone
+from demo.drones.greedy import GreedyDrone
+from demo.drones.worker import WorkerDrone
 from demo.strategies import StrategyHarvesting, StrategyHunting
 from robogame_engine.geometry import Vector
 

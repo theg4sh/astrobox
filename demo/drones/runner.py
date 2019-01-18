@@ -7,6 +7,8 @@ from demo.strategies import StrategyApproach
 
 
 class RunnerDrone(DroneUnitWithStrategies):
+    # TODO этот ничего не собирает? тогда он не нужен
+    # TODO если в тестовых целях - назови TestDrone
 
     def anyAsteroid(self):
         return random.choice(self.scene.asteroids)
