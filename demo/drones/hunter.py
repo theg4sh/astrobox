@@ -44,7 +44,7 @@ class HunterDrone(GreedyDrone):
                 elerium_stocks.remove(drone.elerium_stock)
         if elerium_stocks:
             elerium_stocks = sorted(elerium_stocks, key=lambda x: x.distance_to(self))
-            return elerium_stocks[0];
+            return elerium_stocks[0]
 
         # Потом с астероидов
         elerium_stocks = [asteriod for asteriod in self.unit.scene.asteroids if asteriod.cargo.payload > 0]
@@ -70,8 +70,8 @@ class HunterDrone(GreedyDrone):
 
     @property
     def is_unloading(self):
-        return self.cargo.is_full or (self.substrategy is not None and \
-                                      self.substrategy.current_strategy_id == "approach&unload")
+        return self.cargo.is_full or (self.substrategy is not None
+                                      and self.substrategy.current_strategy_id == "approach&unload")
 
     def game_step(self):
         if not self.have_gun:
@@ -86,13 +86,13 @@ class HunterDrone(GreedyDrone):
             vector = Vector.from_points(self.coord, self.victim.coord,
                                         module=self.gun.shot_distance)
             if int(self.distance_to(self.victim)) < 1 or (
-                    self.distance_to(self.victim) < vector.module \
+                    self.distance_to(self.victim) < vector.module
                     and abs(nearest_angle_distance(vector.direction, self.direction)) < 7
             ):
                 self.gun.shot(self.victim)
         else:
-            enemies = [enemy for enemy in self.scene.drones \
-                       if enemy.team != self.team and enemy.is_alive and \
+            enemies = [enemy for enemy in self.scene.drones
+                       if enemy.team != self.team and enemy.is_alive and
                        enemy.distance_to(self) < self.gun.shot_distance]
             enemie = sorted(enemies, key=lambda x: -x.cargo.payload)
             for enemy in enemies:
@@ -100,4 +100,3 @@ class HunterDrone(GreedyDrone):
                 if abs(nearest_angle_distance(vector.direction, self.direction)) < 7:
                     self.gun.shot(enemy)
                     break
-        pass  #

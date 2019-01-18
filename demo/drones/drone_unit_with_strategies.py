@@ -32,7 +32,7 @@ class DroneUnitWithStrategies(DroneUnit):
                 self.__strategies.remove(s)
                 continue
             s.game_step()
-            break;
+            break
 
     # @brief elerium_stocks возвращает все объекты мира из которых можно добывать ресурсы
     @property

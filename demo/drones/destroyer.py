@@ -4,6 +4,7 @@ from demo.drones.drone_unit_with_strategies import DroneUnitWithStrategies
 
 from demo.strategies import StrategyHarvesting, StrategyDestroyer
 
+
 class DestroyerDrone(DroneUnitWithStrategies):
     _hunters = []
 
@@ -32,5 +33,3 @@ class DestroyerDrone(DroneUnitWithStrategies):
         if self.have_gun:
             if self.is_strategy_finished():
                 self.append_strategy(StrategyHarvesting(unit=self))
-
-

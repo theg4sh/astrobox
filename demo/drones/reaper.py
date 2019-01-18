@@ -55,7 +55,7 @@ class ReaperState(object):
 
 class ReaperStateIdle(ReaperState):
     def __init__(self, strategy):
-        super(self.__class__, self).__init__(strategy);
+        super(self.__class__, self).__init__(strategy)
 
     def make_transition(self):
         if not self.unit.is_alive:
@@ -89,7 +89,7 @@ class ReaperStateUnload(ReaperState):
         self._target = None
         self._target_cargo = None
         self._transition = None
-        super(ReaperStateUnload, self).__init__(strategy);
+        super(ReaperStateUnload, self).__init__(strategy)
 
     def make_transition(self):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
@@ -124,7 +124,7 @@ class ReaperStateHarvest(ReaperState):
         self._target = None
         self._target_cargo = None
         self._transition = None
-        super(ReaperStateHarvest, self).__init__(strategy);
+        super(ReaperStateHarvest, self).__init__(strategy)
 
     def make_transition(self):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
@@ -171,7 +171,7 @@ class ReaperStateHarvest(ReaperState):
 
 class ReaperStateAttack(ReaperState):
     def __init__(self, strategy):
-        super(ReaperStateAttack, self).__init__(strategy);
+        super(ReaperStateAttack, self).__init__(strategy)
 
     def make_transition(self):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
@@ -183,7 +183,7 @@ class ReaperStateAttack(ReaperState):
 
 class ReaperStateRunout(ReaperState):
     def __init__(self, strategy):
-        super(ReaperStateRunout, self).__init__(strategy);
+        super(ReaperStateRunout, self).__init__(strategy)
         self._target = None
         self._directions = [-25, 25]
         random.shuffle(self._directions)
@@ -358,7 +358,7 @@ class ReaperStrategy(Strategy):
 
     def __init__(self, **kwargs):
         super(ReaperStrategy, self).__init__(**kwargs)
-        self.data._drones.append(self.unit);
+        self.data._drones.append(self.unit)
 
         # PathFinder
         if self.unit.pathfind is None:
@@ -512,6 +512,7 @@ class ReaperDrone(DroneUnitWithStrategies):
 
     def set_fsm_state(self, new_fsm_state):
         if new_fsm_state.__class__ != self.__fsm_state.__class__:
+            # TODO заюзай termcolor - делает тоже самое, но проще
             print(u"\u001b[34;1m#{}\t{}\t{} [{}] -> [{}]\u001b[0m".format(self.id, self,
                                                                           "new fsm state transition",
                                                                           self.__fsm_state.__class__.__name__[11:],
