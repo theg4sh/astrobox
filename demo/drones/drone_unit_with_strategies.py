@@ -1,7 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from astrobox.units import DroneUnit, Unit
+
 
 class DroneUnitWithStrategies(DroneUnit):
     def __init__(self, **kwargs):
@@ -17,7 +17,7 @@ class DroneUnitWithStrategies(DroneUnit):
             for s in self.__strategies:
                 if s.group == strategy.group:
                     self.__strategies.remove(s)
-        self.__strategies.append( strategy )
+        self.__strategies.append(strategy)
 
     def clear_strategies(self):
         self.__strategies = []
@@ -38,8 +38,7 @@ class DroneUnitWithStrategies(DroneUnit):
     @property
     def elerium_stocks(self):
         return [es for es in self.scene.get_objects_by_type(Unit) if hasattr(es, 'cargo') and not es.is_alive]
-    
+
     # Позволяет обращаться к чистому обработчику из стратегий
     def native_game_step(self):
         super(DroneUnitWithStrategies, self).game_step()
-

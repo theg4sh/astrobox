@@ -1,10 +1,11 @@
-from robogame_engine.geometry import Point, Vector
+# -*- coding: utf-8 -*-
+
 from astrobox.utils import nearest_angle_distance
-
-from demo.drones.worker_drone import WorkerDrone
 from demo.drones.greedy_drone import GreedyDrone
+from demo.drones.worker_drone import WorkerDrone
+from demo.strategies import StrategyHarvesting, StrategyHunting
+from robogame_engine.geometry import Vector
 
-from demo.strategies import StrategyApproach, StrategyHarvesting, StrategyHunting
 
 class HunterDrone(GreedyDrone):
     _hunters = []
@@ -14,7 +15,7 @@ class HunterDrone(GreedyDrone):
         self._hunting_strategy = None
         self._approach_strategy = None
         self._victim = None
-        #self._no_victim_strategy = False
+        # self._no_victim_strategy = False
         self._victim_stamp = 0
         self._next_victim = None
         self.substrategy = None
@@ -60,7 +61,7 @@ class HunterDrone(GreedyDrone):
     def set_victim(self, victim):
         self._next_victim = None
         self._victim = victim
-        self._victim_stamp=0
+        self._victim_stamp = 0
         if not self.substrategy.is_finished:
             self.stop()
             self.state.stop()
@@ -70,8 +71,8 @@ class HunterDrone(GreedyDrone):
     @property
     def is_unloading(self):
         return self.cargo.is_full or (self.substrategy is not None and \
-                self.substrategy.current_strategy_id == "approach&unload")
-    
+                                      self.substrategy.current_strategy_id == "approach&unload")
+
     def game_step(self):
         if not self.have_gun:
             super(HunterDrone, self).game_step()
@@ -86,18 +87,17 @@ class HunterDrone(GreedyDrone):
                                         module=self.gun.shot_distance)
             if int(self.distance_to(self.victim)) < 1 or (
                     self.distance_to(self.victim) < vector.module \
-                    and abs(nearest_angle_distance(vector.direction, self.direction))<7
-                ):
+                    and abs(nearest_angle_distance(vector.direction, self.direction)) < 7
+            ):
                 self.gun.shot(self.victim)
         else:
             enemies = [enemy for enemy in self.scene.drones \
-                             if enemy.team != self.team and enemy.is_alive and \
-                             enemy.distance_to(self) < self.gun.shot_distance]
+                       if enemy.team != self.team and enemy.is_alive and \
+                       enemy.distance_to(self) < self.gun.shot_distance]
             enemie = sorted(enemies, key=lambda x: -x.cargo.payload)
             for enemy in enemies:
                 vector = Vector.from_points(self.coord, enemy.coord)
                 if abs(nearest_angle_distance(vector.direction, self.direction)) < 7:
                     self.gun.shot(enemy)
                     break
-        pass #
-
+        pass  #

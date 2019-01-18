@@ -1,4 +1,9 @@
+# -*- coding: utf-8 -*-
+
+import random
+
 from demo.drones.worker_drone import WorkerDrone
+
 
 class GreedyDrone(WorkerDrone):
 
@@ -28,5 +33,3 @@ class GreedyDrone(WorkerDrone):
         if nearest_stock:
             return nearest_stock
         return random.choice(elerium_stocks)
-
-

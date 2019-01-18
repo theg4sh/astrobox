@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 from demo.drones.drone_unit_with_strategies import DroneUnitWithStrategies
 
 from demo.strategies import StrategyHarvesting
+
 
 class WorkerDrone(DroneUnitWithStrategies):
     counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
@@ -19,4 +22,3 @@ class WorkerDrone(DroneUnitWithStrategies):
     def on_born(self):
         super(WorkerDrone, self).on_born()
         self.append_strategy(StrategyHarvesting(unit=self))
-

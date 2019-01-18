@@ -1,6 +1,10 @@
-from demo.drones.drone_unit_with_strategies import DroneUnitWithStrategies
+# -*- coding: utf-8 -*-
 
+import random
+
+from demo.drones.drone_unit_with_strategies import DroneUnitWithStrategies
 from demo.strategies import StrategyApproach
+
 
 class RunnerDrone(DroneUnitWithStrategies):
 
@@ -14,5 +18,3 @@ class RunnerDrone(DroneUnitWithStrategies):
         super(RunnerDrone, self).game_step()
         if self.is_strategy_finished():
             self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
-
-

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from demo.drones.drone_unit_with_strategies import DroneUnitWithStrategies
 
 from demo.strategies import StrategyHarvesting, StrategyDestroyer
