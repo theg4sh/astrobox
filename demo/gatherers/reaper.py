@@ -6,11 +6,13 @@ from operator import mul
 
 from astrobox.guns import Projectile
 from astrobox.units import (DroneUnit)
-from demo.drones.drone_unit_with_strategies import DroneUnitWithStrategies
-from demo.events import EventUnitDamage
-from demo.strategies import Strategy
 from robogame_engine.geometry import Point, Vector
 from robogame_engine.theme import theme
+from .drone_unit_with_strategies import DroneUnitWithStrategies
+from .strategies import Strategy
+
+# TODO вынести в труперов
+from demo.troopers.events import EventUnitDamage
 
 from demo.drones.dijkstra import Dijkstra
 from demo.drones.states import DroneStateIdle
@@ -228,6 +230,7 @@ class ReaperDrone(DroneUnitWithStrategies):
         self.append_strategy(self._strategy)
 
     def on_damage(self, victim=None, attacker=None):
+        # TODO вынести в труперов
         if victim == self:
             for tm in self.teammates:
                 tm.add_event(EventUnitDamage(tm, victim=victim, attacker=attacker))
