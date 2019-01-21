@@ -2,7 +2,7 @@
 
 from astrobox.units import DroneUnit, Unit
 
-# TODO может это все в astrobox/demo/gatherers/strategies.py перенести?
+# TODO может это все в astrobox/demo/harvesters/strategies.py перенести?
 
 class DroneUnitWithStrategies(DroneUnit):
     def __init__(self, **kwargs):

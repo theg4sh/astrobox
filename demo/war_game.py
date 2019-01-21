@@ -4,7 +4,7 @@ import os
 
 from astrobox.space_field import SpaceField
 from demo.ordinary.greedy import GreedyDrone
-from demo.gatherers.reaper import ReaperDrone
+from demo.harvesters.reaper import ReaperDrone
 from demo.troopers.destroyer import DestroyerDrone
 from demo.troopers.hunter import HunterDrone
 from robogame_engine.theme import theme

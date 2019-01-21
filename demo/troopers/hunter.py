@@ -3,7 +3,7 @@
 from astrobox.utils import nearest_angle_distance
 from demo.ordinary.greedy import GreedyDrone
 from demo.ordinary.worker import WorkerDrone
-from demo.gatherers.strategies import StrategyHarvesting, StrategyHunting
+from demo.harvesters.strategies import StrategyHarvesting, StrategyHunting
 from robogame_engine.geometry import Vector
 
 

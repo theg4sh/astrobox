@@ -5,8 +5,8 @@ import os
 from astrobox.space_field import SpaceField
 from demo.ordinary.greedy import GreedyDrone
 from demo.ordinary.worker import WorkerDrone
-from demo.gatherers.reaper import ReaperDrone
-#from demo.gatherers.driller import DrillerDrone
+from demo.harvesters.reaper import ReaperDrone
+from demo.harvesters.driller import DrillerDrone
 from robogame_engine.theme import theme
 
 if __name__ == '__main__':
@@ -20,6 +20,6 @@ if __name__ == '__main__':
     teamA = [ReaperDrone()  for _ in range(theme.TEAM_DRONES_COUNT)]
     teamB = [GreedyDrone()  for _ in range(theme.TEAM_DRONES_COUNT)]
     teamC = [WorkerDrone()  for _ in range(theme.TEAM_DRONES_COUNT)]
-    #teamD = [DrillerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamD = [DrillerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
 
     space_field.go()
