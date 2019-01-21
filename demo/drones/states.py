@@ -18,16 +18,16 @@ def get_point_on_way_to(target, at_distance=None):
 class DroneState(object):
     def __init__(self, strategy):
         assert (strategy is not None)
-        self._strategy = strategy
+        self.__strategy = strategy
         self._ttl = 0
 
     @property
     def strategy(self):
-        return self._strategy
+        return self.__strategy
 
     @property
     def unit(self):
-        return self._strategy.unit
+        return self.strategy.unit
 
     @property
     def scene(self):
@@ -40,13 +40,17 @@ class DroneState(object):
         self._ttl = self._ttl + 1
 
 
+class DroneStateNone(DroneState):
+    def make_transition(self):
+        return self.__class__
+
 class DroneStateIdle(DroneState):
     def __init__(self, strategy):
         super(self.__class__, self).__init__(strategy)
 
     def make_transition(self):
         if not self.unit.is_alive:
-            return DroneStateDead
+            return DroneStateNone
         if self.unit.have_gun:
             # raise Exception("Guns have not implemented yet")
             pass
@@ -61,14 +65,12 @@ class DroneStateIdle(DroneState):
                 return DroneStateHarvest
         if not self.strategy.unit.cargo.is_empty:
             return DroneStateUnload
+        elif not has_sources and self.unit.distance_to(self.unit.mothership()) < theme.CARGO_TRANSITION_DISTANCE:
+            return DroneStateNone
         # if not has_sources:
         #    return DroneStateUnload
         return self.__class__
 
-
-class DroneStateDead(DroneState):
-    def make_transition(self):
-        return self.__class__
 
 
 class DroneStateUnload(DroneState):
@@ -95,6 +97,7 @@ class DroneStateUnload(DroneState):
                 target = self.unit.mothership()
             self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
             self._target_cargo = target.cargo
+            self.strategy.data._targets[self.unit.id] = self._target
             self.unit.move_at(self._target)
         if self._transition:
             self._transition.game_step()
@@ -108,10 +111,10 @@ class DroneStateUnload(DroneState):
 
 class DroneStateHarvest(DroneState):
     def __init__(self, strategy):
+        super(DroneStateHarvest, self).__init__(strategy)
         self._target = None
         self._target_cargo = None
         self._transition = None
-        super(DroneStateHarvest, self).__init__(strategy)
 
     def make_transition(self):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
@@ -134,15 +137,8 @@ class DroneStateHarvest(DroneState):
         return self.__class__
 
     def game_step(self):
-        super(self.__class__, self).game_step()
-        if self._target is None:
-            target = self.strategy.getHarvestTarget()
-            if target is not None:
-                self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
-                self._target_cargo = target.cargo
-                self.unit.move_at(self._target.copy())
-            elif self._transition is not None:
-                return
+        super(DroneStateHarvest, self).game_step()
+        # TODO: harvest any possible targets on the way to self._target
         if self._transition:
             self._transition.game_step()
             target = self.strategy.getUnloadTarget()
@@ -150,6 +146,16 @@ class DroneStateHarvest(DroneState):
                 self.unit.turn_to(target)
             else:
                 self.unit.turn_to(self.unit.mothership())
+        if self._target is None:
+            target = self.strategy.getHarvestTarget()
+            if target is not None:
+                self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
+                self._target_cargo = target.cargo
+                self.unit.move_at(self._target.copy())
+                self.strategy.data._targets[self.unit.id] = target
+            elif self._transition is not None:
+                return
+        uclosest = self.unit.closest_in_path
         if self._transition is None and self._target and int(self.unit.distance_to(self._target)) <= 1:
             print(u"\u001b[36;1mNew cargo transition: {} -> {}\u001b[0m".format(self._target_cargo.owner.id,
                                                                                 self.unit.id))
@@ -188,8 +194,8 @@ class DroneStateRunout(DroneState):
             self._directions.append(nextdir)
             v = v.from_direction(v.direction + nextdir, max(125, min(225, v.module * 0.50)))
             target = self.unit.coord + v
-            target.x = max(0, min(theme.FIELD_WIDTH, target.x))
-            target.y = max(0, min(theme.FIELD_HEIGHT, target.y))
+            target.x = max(self.unit.__class__.radius, min(theme.FIELD_WIDTH-self.unit.__class__.radius, target.x))
+            target.y = max(self.unit.__class__.radius, min(theme.FIELD_HEIGHT-self.unit.__class__.radius, target.y))
             # target = self.unit.mothership()
             if target is not None:
                 self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)

@@ -19,6 +19,18 @@ class Dijkstra:
     def weights(self):
         return self._weights
 
+    def _get_closest(self):
+        if not self._unit.is_alive:
+            return
+        uclosest = self._points[0]
+        dclosest = self._points[0].distance_to(self._unit)
+        for u in self._points:
+            chkdist = self._unit.distance_to(u)
+            if chkdist < dclosest:
+                dclosest = chkdist
+                uclosest = u
+        return uclosest
+
     def update_units(self, func=None):
         if func is None:
             func = lambda a: True
@@ -29,18 +41,7 @@ class Dijkstra:
         units = units + [d for d in self._unit.scene.drones if not d.is_alive and func(d)]
         weights = [[0.0 for _ in range(len(units))] for _ in range(len(units))]
         self._weights, self._points = weights, units
-
-    def get_closest(self, unit):
-        if not self._unit.is_alive:
-            return
-        uclosest = self._points[0]
-        dclosest = self._points[0].distance_to(unit)
-        for u in self._points:
-            chkdist = unit.distance_to(u)
-            if chkdist < dclosest:
-                dclosest = chkdist
-                uclosest = u
-        return uclosest
+        self._unit._path_closest = self._get_closest()
 
     def to_objects(self, indexes):
         return [self._points[n] for n in indexes]
