@@ -8,7 +8,7 @@ from astrobox.guns import Projectile
 from astrobox.units import (DroneUnit)
 from robogame_engine.geometry import Point, Vector
 from robogame_engine.theme import theme
-from .drone_unit_with_strategies import DroneUnitWithStrategies
+from demo.harvesters.strategies import DroneUnitWithStrategies
 from .strategies import Strategy
 
 # TODO вынести в труперов

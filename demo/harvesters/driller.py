@@ -4,7 +4,7 @@ from operator import mul
 from robogame_engine.geometry import Point, Vector
 from robogame_engine.theme import theme
 
-from demo.drones.reaper import ReaperStrategy, ReaperDrone
+from demo.harvesters.reaper import ReaperStrategy, ReaperDrone
 from demo.drones.states import DroneStateIdle
 
 class DrillerStrategy(ReaperStrategy):
