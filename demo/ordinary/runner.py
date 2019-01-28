@@ -2,8 +2,8 @@
 
 import random
 
-from .drone_unit_with_strategies import DroneUnitWithStrategies
-from .strategies import StrategyApproach
+from demo.harvesters.strategies import DroneUnitWithStrategies
+from demo.harvesters.strategies import StrategyApproach
 
 
 class RunnerDrone(DroneUnitWithStrategies):

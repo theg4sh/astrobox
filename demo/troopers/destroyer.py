@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from demo.harvesters.drone_unit_with_strategies import DroneUnitWithStrategies
-
-from demo.harvesters.strategies import StrategyHarvesting, StrategyDestroyer
+from demo.harvesters.strategies import StrategyHarvesting, StrategyDestroyer, DroneUnitWithStrategies
 
 
 class DestroyerDrone(DroneUnitWithStrategies):
