@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import math
-import random
 from operator import mul
 
 from astrobox.guns import Projectile
-from astrobox.units import (DroneUnit)
-from robogame_engine.geometry import Point, Vector
-from robogame_engine.theme import theme
-from demo.harvesters.strategies import DroneUnitWithStrategies
-from .strategies import Strategy
-
-# TODO вынести в труперов
-from demo.troopers.events import EventUnitDamage
-
 from demo.drones.dijkstra import Dijkstra
 from demo.drones.states import DroneStateIdle
+from demo.harvesters.strategies import DroneUnitWithStrategies
+# TODO вынести в труперов
+from demo.troopers.events import EventUnitDamage
+from robogame_engine.geometry import Point, Vector
+from robogame_engine.theme import theme
+from .strategies import Strategy
+
 
 # from robogame_engine.user_interface import Lines
 def is_on_straight(a, b):
