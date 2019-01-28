@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from astrobox.units import DroneUnit, Unit
+from astrobox.units import DroneUnit, Unit, MotherShip
 
 # TODO может это все в astrobox/demo/harvesters/strategies.py перенести?
 
@@ -38,7 +38,8 @@ class DroneUnitWithStrategies(DroneUnit):
     # @brief elerium_stocks возвращает все объекты мира из которых можно добывать ресурсы
     @property
     def elerium_stocks(self):
-        return [es for es in self.scene.get_objects_by_type(Unit) if hasattr(es, 'cargo') and not es.is_alive]
+        return [es for es in self.scene.get_objects_by_type(Unit) if hasattr(es, 'cargo') and
+                (not es.is_alive if issubclass(es.__class__, tuple([DroneUnitWithStrategies, MotherShip])) else True)]
 
     # Позволяет обращаться к чистому обработчику из стратегий
     def native_game_step(self):

@@ -57,7 +57,7 @@ class ReaperStrategy(Strategy):
         if ReaperStrategy._distance_max is None:
             ReaperStrategy._distance_max = math.sqrt(theme.FIELD_HEIGHT * theme.FIELD_HEIGHT + theme.FIELD_WIDTH * theme.FIELD_WIDTH)
         if ReaperStrategy._distance_limit is None:
-            ReaperStrategy._distance_limit = 0.15 * ReaperStrategy._distance_max
+            ReaperStrategy._distance_limit = 0.25 * ReaperStrategy._distance_max
 
         self.data._drones.append(self.unit)
 
@@ -70,31 +70,38 @@ class ReaperStrategy(Strategy):
 
     def weight_harvest_func(self, a, b):
         dist = a.distance_to(b)
-        if dist > self._distance_limit:
-            return float("inf")
+        distlim = self._distance_limit
+        #distlim = self._distance_max * float(self.data._drones.index(self.unit)+1.0) / float(len(self.data._drones))
+        #if dist > distlim:
+        #    return float("inf")
         if b.cargo.fullness == 0.0:
             return float("inf")
+        amdist = a.distance_to(self.unit.mothership())
+        bmdist = b.distance_to(self.unit.mothership())
         k = float(self._distance_max)
-        coef = [0.5 / k, 1.0]
-        values = [dist, b.cargo.fullness]
+        coef = [(1.0 if bmdist>amdist else 0.25) / distlim, 1.0]
+        values = [dist, 1.0-b.cargo.fullness]
         return sum(map(mul, coef, values))
 
     def get_harvest_source(self):
         # TODO: do better choice than a fattest asteroid
         center_of_scene = Point(theme.FIELD_WIDTH/2, theme.FIELD_HEIGHT/2)
         units = self.unit.pathfind.points
-        units.sort(key=lambda u: u.distance_to(center_of_scene))
-        return units[0]
-
-        #fat_source = [p for p in self.unit.pathfind.points if p != self.unit.mothership()]
-        #k = float(self._distance_max)
-        #fat_source.sort(key=lambda a: a.cargo.payload / a.scene.max_elerium + self.unit.mothership().distance_to(a) / k,
-        #                reverse=True)
-        #if not fat_source:
-        #    return None
-        #return fat_source[0]
+        units.sort(key=lambda u: u.distance_to(self.unit.mothership()))
+        units = [u for u in units if u != self.unit.mothership() and u != self.unit.closest_in_path]
+        return units[0] if units else None
 
     def getHarvestTarget(self):
+        didx = self.data._drones.index(self.unit)
+        if didx < 2:
+            self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
+            center_of_scene = self.unit.mothership().coord.copy()
+            units = [p for p in self.unit.pathfind.points if p != self.unit.mothership()]
+            if not units:
+                return None
+            units.sort(key=lambda u: u.distance_to(center_of_scene))
+            return units[didx] if len(units)-1>=didx else units[0]
+
         self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
 
         self.unit.pathfind.calc_weights(func=self.weight_harvest_func)
@@ -102,12 +109,14 @@ class ReaperStrategy(Strategy):
         if not fat_source:
             return None
 
-        path = self.unit.pathfind.find_path(self.unit.mothership(), fat_source, as_objects=True, info="harv")
+        path = self.unit.pathfind.find_path(self.unit.mothership(), fat_source, as_objects=True)#, info="harv")
         if path is None:
             return None
 
         # Distribute enought amount of units to harvest a source
         for u in path:
+            if u == self.unit.mothership():
+                continue
             if sum([theme.DRONE_CARGO_PAYLOAD for t in self.data._targets if self.data._targets[t] == u]) < u.cargo.payload:
                 return u
 
@@ -118,27 +127,27 @@ class ReaperStrategy(Strategy):
         return path[idx]
 
     def weight_unload_func(self, a, b):
+        if a == self.unit.mothership() or b == self.unit.mothership():
+            return 0.0
         dist = a.distance_to(b)
-        if dist > self._distance_limit:
-            return float("inf")
-        vdist = 0.0
-        if dist != 0.0:
-            vdist = float(self.unit.distance_to(self.unit.mothership())) / dist
-        coef = [1.0, 1.0]
-        values = [vdist, 1.0 - b.cargo.fullness]
+        adist = self.unit.mothership().distance_to(a)
+        bdist = self.unit.mothership().distance_to(b)
+        coef = [bdist/adist, 1.0]
+        values = [dist, 1.0-b.cargo.fullness]
         return sum(map(mul, coef, values))
 
     def getUnloadTarget(self):
+        if self.data._drones.index(self.unit) < 2:
+            return self.unit.mothership()
         if len([a for a in self.unit.scene.asteroids if a.cargo.payload > 0]) == 0:
             return self.unit.mothership()
 
-        self.unit.pathfind_unload.update_units(func=lambda u: u.cargo.fullness < 0.7)
+        self.unit.pathfind_unload.update_units(func=lambda u: u.cargo.fullness < 1.0)
 
         uclosest = self.unit.closest_in_path
         self.unit.pathfind_unload.calc_weights(func=self.weight_unload_func)
 
-        path_unload = self.unit.pathfind_unload.find_path(uclosest, self.unit.mothership(), as_objects=True,
-                                                          info="unld")
+        path_unload = self.unit.pathfind_unload.find_path(uclosest, self.unit.mothership(), as_objects=True)#, info="unld")
         if path_unload is None:
             return None
 

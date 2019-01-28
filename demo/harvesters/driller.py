@@ -12,9 +12,13 @@ class DrillerStrategy(ReaperStrategy):
         self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
         center_of_scene = Point(theme.FIELD_WIDTH/2, theme.FIELD_HEIGHT/2)
         units = self.unit.pathfind.points
+        if not units:
+            return None
         units.sort(key=lambda u: u.distance_to(center_of_scene))
         # Distribute enought amount of units to harvest a source
         for u in units:
+            if u == self.unit.mothership():
+                continue
             if sum([theme.DRONE_CARGO_PAYLOAD for t in self.data._targets if self.data._targets[t] == u]) < u.cargo.payload:
                 return u
         return units[0]
