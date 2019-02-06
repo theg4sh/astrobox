@@ -7,29 +7,10 @@ from astrobox.guns import Projectile
 from demo.drones.dijkstra import Dijkstra
 from demo.drones.states import DroneStateIdle
 from demo.harvesters.strategies import DroneUnitWithStrategies
-# TODO вынести в труперов
-from demo.troopers.events import EventUnitDamage
 from robogame_engine.geometry import Point, Vector
 from robogame_engine.theme import theme
 from .strategies import Strategy
 
-
-# from robogame_engine.user_interface import Lines
-def is_on_straight(a, b):
-    v = Vector.from_points(a.coord, b.coord)
-    v.rotate(-a.direction)
-    if math.fabs(v.direction) < 90.0:
-        a = v.direction / 180.0 * math.pi
-        limit = (b.__class__.radius + Projectile.radius)
-        if a.team == b.team:
-            limit *= 1.5
-        return math.fabs(a.distance_to(b) * math.sin(a)) < limit
-    return False
-
-
-# Pipeline. Bring elerium from far asteroids to nearest.
-# One group brings elerium to near asteroids, another one
-# brings elerium from near asteroids to the base.
 class ReaperStrategy(Strategy):
     _distance_max = None
     _distance_limit = None
@@ -71,12 +52,13 @@ class ReaperStrategy(Strategy):
         #distlim = self._distance_max * float(self.data._drones.index(self.unit)+1.0) / float(len(self.data._drones))
         #if dist > distlim:
         #    return float("inf")
-        if b.cargo.fullness == 0.0:
+        if b.cargo.fullness == 0.0 or b.__class__ == self.unit.mothership().__class__:
             return float("inf")
         amdist = a.distance_to(self.unit.mothership())
         bmdist = b.distance_to(self.unit.mothership())
+        abdist = a.distance_to(b)
         k = float(self._distance_max)
-        coef = [(1.0 if bmdist>amdist else 0.25) / distlim, 1.0]
+        coef = [1.0 / distlim, 1.0]
         values = [dist, 1.0-b.cargo.fullness]
         return sum(map(mul, coef, values))
 
@@ -88,18 +70,28 @@ class ReaperStrategy(Strategy):
         units = [u for u in units if u != self.unit.mothership() and u != self.unit.closest_in_path]
         return units[0] if units else None
 
+    def distributeHarvestSources(self, units):
+        # Distribute enought amount of units to harvest a source
+        for u in units:
+            if u == self.unit.mothership():
+                continue
+            if sum([theme.DRONE_CARGO_PAYLOAD for t in self.data._targets if
+                    self.data._targets[t] == u]) < u.cargo.payload:
+                return u
+        return None
+
+
     def getHarvestTarget(self):
+        self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
+
         didx = self.data._drones.index(self.unit)
         if didx < 2:
-            self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
             center_of_scene = self.unit.mothership().coord.copy()
             units = [p for p in self.unit.pathfind.points if p != self.unit.mothership()]
             if not units:
                 return None
-            units.sort(key=lambda u: u.distance_to(center_of_scene))
+            units.sort(key=lambda u: u.distance_to(self.unit))
             return units[didx] if len(units)-1>=didx else units[0]
-
-        self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
 
         self.unit.pathfind.calc_weights(func=self.weight_harvest_func)
         fat_source = self.get_harvest_source()
@@ -110,12 +102,9 @@ class ReaperStrategy(Strategy):
         if path is None:
             return None
 
-        # Distribute enought amount of units to harvest a source
-        for u in path:
-            if u == self.unit.mothership():
-                continue
-            if sum([theme.DRONE_CARGO_PAYLOAD for t in self.data._targets if self.data._targets[t] == u]) < u.cargo.payload:
-                return u
+        u = self.distributeHarvestSources(path)
+        if u:
+            return u
 
         pos = self.data._drones.index(self.unit)
         sz = len(path)
@@ -163,35 +152,8 @@ class ReaperStrategy(Strategy):
     def fsm_state(self):
         return self.unit.fsm_state
 
-    def gun_fire(self):
-        if not self.unit.have_gun:
-            return
-
-        def target_drones():
-            for d in self.unit.scene.drones:
-                if not d.is_alive or d.id == self.unit.id:
-                    continue
-                if self.unit.distance_to(d) > theme.PROJECTILE_TTL * theme.PROJECTILE_SPEED * 0.8:
-                    continue
-                if is_on_straight(self.unit, d):
-                    yield d
-
-        targets = list(target_drones())
-        if targets:
-            if is_on_straight(self.unit, self.unit.mothership()):
-                targets.append(self.unit.mothership())
-            targets.sort(key=lambda t: self.unit.distance_to(t))
-
-            # print("Team {}:{}\t{} {}".format(self.unit.team, self.unit.id, len(targets), len(teammates)))
-            # print("Team {}:{}\t{}".format(self.unit.team, self.unit.id, targets))
-            if self.unit.team != targets[0].team:
-                # print("Team {}:{} {}".format(self.unit.team, self.unit.id, targets))
-                self.unit.gun.shot([d for d in targets if d.team != self.unit.team][0])
-
     def game_step(self, **kwargs):
         super(ReaperStrategy, self).game_step(**kwargs)
-
-        self.gun_fire()
 
         newState = self.fsm_state.make_transition()
         if newState != self.fsm_state.__class__:
@@ -203,6 +165,7 @@ class ReaperStrategy(Strategy):
 
 class ReaperDrone(DroneUnitWithStrategies):
     _strategy_class = ReaperStrategy
+    _logging = False
 
     def __init__(self, *args, **kwargs):
         super(ReaperDrone, self).__init__(*args, **kwargs)
@@ -221,7 +184,7 @@ class ReaperDrone(DroneUnitWithStrategies):
         return self.__fsm_state
 
     def set_fsm_state(self, new_fsm_state):
-        if new_fsm_state.__class__ != self.__fsm_state.__class__:
+        if self._logging and new_fsm_state.__class__ != self.__fsm_state.__class__:
             # TODO заюзай termcolor - делает тоже самое, но проще
             print(u"\u001b[34;1m#{}\t{}\t{} [{}] -> [{}]\u001b[0m".format(self.id, self,
                                                                           "new fsm state transition",
@@ -234,13 +197,3 @@ class ReaperDrone(DroneUnitWithStrategies):
         self._strategy = self._strategy_class(unit=self)
         self.set_fsm_state(DroneStateIdle(self._strategy))
         self.append_strategy(self._strategy)
-
-    def on_damage(self, victim=None, attacker=None):
-        # TODO вынести в труперов
-        if victim == self:
-            for tm in self.teammates:
-                tm.add_event(EventUnitDamage(tm, victim=victim, attacker=attacker))
-        else:
-            # TODO: react on damaged teammate
-            print(victim, attacker)
-            pass

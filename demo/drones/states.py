@@ -39,6 +39,14 @@ class DroneState(object):
     def game_step(self):
         self._ttl = self._ttl + 1
 
+    def sources(self):
+        _sources = self.scene.asteroids
+        _sources = _sources + [m for m in self.unit.scene.motherships if not m.is_alive and m.team != self.unit.team]
+        _sources = _sources + [d for d in self.unit.scene.drones if not d.is_alive]
+        has_sources = len([s for s in _sources if s.cargo.payload > 0]) > 0
+        return has_sources, _sources
+
+
 
 class DroneStateNone(DroneState):
     def make_transition(self):
@@ -56,11 +64,8 @@ class DroneStateIdle(DroneState):
             pass
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
             return DroneStateRunout
-        sources = self.scene.asteroids
-        sources = sources + [m for m in self.unit.scene.motherships if not m.is_alive and m.team != self.unit.team]
-        sources = sources + [d for d in self.unit.scene.drones if not d.is_alive]
-        has_sources = len([s for s in sources if s.cargo.payload > 0]) > 0
-        if self.unit.cargo.fullness < 0.5:
+        has_sources, sources = self.sources()
+        if self.unit.cargo.fullness < 0.99:
             if has_sources:
                 return DroneStateHarvest
         if not self.strategy.unit.cargo.is_empty:
@@ -80,13 +85,24 @@ class DroneStateUnload(DroneState):
         self._transition = None
         super(DroneStateUnload, self).__init__(strategy)
 
+    def has_any_enemy_going_harvest(self):
+        if not self._target_point:
+            return False
+        enemy_drones = [d for d in self.unit.scene.drones if d.team != self.unit.team and d.is_alive and
+                d.distance_to(self._target) < theme.CARGO_TRANSITION_DISTANCE * 4.0 and
+                math.fabs(d.direction - Vector.from_points(d.coord, self._target.coord.copy()).direction)<(math.pi/180.0)] # 1 degree
+        return len(enemy_drones) > 0
+
     def make_transition(self):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
             return DroneStateRunout
         if self.unit.cargo.is_empty:
             return DroneStateIdle
-        if self._transition and self._transition.is_finished:
-            return DroneStateIdle
+        if self._transition:
+            if self.has_any_enemy_going_harvest():
+                return DroneStateHarvest
+            if self._transition.is_finished:
+                return DroneStateIdle
         return self.__class__
 
     def game_step(self):
@@ -95,17 +111,18 @@ class DroneStateUnload(DroneState):
             target = self.strategy.getUnloadTarget()
             if target is None:
                 target = self.unit.mothership()
-            self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
+            self._target = target
+            self._target_point = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
             self._target_cargo = target.cargo
-            self.strategy.data._targets[self.unit.id] = self._target
-            self.unit.move_at(self._target)
+            self.strategy.data._targets[self.unit.id] = self._target_point
+            self.unit.move_at(self._target_point)
         if self._transition:
             self._transition.game_step()
             target = self.strategy.getHarvestTarget()
             if target is None:
                 target = self.unit.mothership()
             self.unit.turn_to(target)
-        elif self.unit.distance_to(self._target) <= 1.0:
+        elif self.unit.distance_to(self._target_point) <= 1.0:
             self._transition = CargoTransition(cargo_from=self.unit.cargo, cargo_to=self._target_cargo)
 
 
@@ -125,10 +142,7 @@ class DroneStateHarvest(DroneState):
             return DroneStateIdle
         if self._transition and self._transition.is_finished:
             return DroneStateUnload
-        sources = self.scene.asteroids
-        sources = sources + [m for m in self.unit.scene.motherships if not m.is_alive and m.team != self.unit.team]
-        sources = sources + [d for d in self.unit.scene.drones if not d.is_alive]
-        has_sources = len([s for s in sources if s.cargo.payload > 0]) > 0
+        has_sources, sources = self.sources()
         if not has_sources:
             if self.unit.cargo.is_empty:
                 return DroneStateIdle
