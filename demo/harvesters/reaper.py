@@ -63,7 +63,6 @@ class ReaperStrategy(Strategy):
         return sum(map(mul, coef, values))
 
     def get_harvest_source(self):
-        # TODO: do better choice than a fattest asteroid
         center_of_scene = Point(theme.FIELD_WIDTH/2, theme.FIELD_HEIGHT/2)
         units = self.unit.pathfind.points
         units.sort(key=lambda u: u.distance_to(self.unit.mothership()))
@@ -185,7 +184,6 @@ class ReaperDrone(DroneUnitWithStrategies):
 
     def set_fsm_state(self, new_fsm_state):
         if self._logging and new_fsm_state.__class__ != self.__fsm_state.__class__:
-            # TODO заюзай termcolor - делает тоже самое, но проще
             print(u"\u001b[34;1m#{}\t{}\t{} [{}] -> [{}]\u001b[0m".format(self.id, self,
                                                                           "new fsm state transition",
                                                                           self.__fsm_state.__class__.__name__[10:],

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from demo.harvesters.strategies import StrategyHarvesting, StrategyDestroyer, DroneUnitWithStrategies
-# TODO вынести в труперов
 from demo.troopers.events import EventUnitDamage
 
 
@@ -75,7 +74,6 @@ class DestroyerDrone(DroneUnitWithStrategies):
                 self.unit.gun.shot([d for d in targets if d.team != self.unit.team][0])
 
     def on_damage(self, victim=None, attacker=None):
-        # TODO вынести в труперов
         if victim == self:
             for tm in self.teammates:
                 tm.add_event(EventUnitDamage(tm, victim=victim, attacker=attacker))
