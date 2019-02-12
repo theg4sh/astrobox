@@ -4,16 +4,13 @@ from astrobox.cargo import CargoTransition
 from robogame_engine.geometry import Point, Vector
 from robogame_engine.theme import theme
 
-def get_point_on_way_to(target, at_distance=None):
+def get_point_on_way_to(unit, target, at_distance=None):
     if at_distance is None:
         at_distance = theme.CARGO_TRANSITION_DISTANCE * 0.9
-    r = at_distance
-    a = math.atan2(target.x, target.y) + math.pi
-    a = math.atan2(target.x, target.y) + math.pi
-    x = r * math.sin(a)
-    y = r * math.cos(a)
-    return Point(target.x + x, target.y + y)
-
+    va = Vector.from_points(unit.coord, target.coord)
+    vb = Vector.from_direction(va.direction, at_distance)
+    vb.rotate(180.0)
+    return Point(unit.x+va.x+vb.x, unit.y+va.y+vb.y)
 
 class DroneState(object):
     def __init__(self, strategy):
@@ -112,7 +109,7 @@ class DroneStateUnload(DroneState):
             if target is None:
                 target = self.unit.mothership()
             self._target = target
-            self._target_point = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
+            self._target_point = get_point_on_way_to(self.unit, target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
             self._target_cargo = target.cargo
             self.strategy.data._targets[self.unit.id] = self._target_point
             self.unit.move_at(self._target_point)
@@ -138,6 +135,17 @@ class DroneStateHarvest(DroneState):
             return DroneStateRunout
         if self.unit.cargo.is_full:
             return DroneStateUnload
+        if self._target:
+            hglob = [self.strategy.data._drones[t] for t in self.strategy.data._targets if self.strategy.data._targets[t] == self._target]
+            if len(hglob) > 1:
+                hglob.sort(key=lambda u: u.fullness)
+                reqsz = self._target_cargo.payload
+                for n, h in enumerate(hglob):
+                    reqsz = reqsz - self.unit.cargo.free_space
+                    if reqsz < 0:
+                        return DroneStateIdle
+        #    #if sum([d.cargo.fullnesshglob) > self._target_cargo.payload:
+        #    #    return u
         if self._target_cargo and self._target_cargo.fullness == 0.0:
             return DroneStateIdle
         if self._transition and self._transition.is_finished:
@@ -163,7 +171,7 @@ class DroneStateHarvest(DroneState):
         if self._target is None:
             target = self.strategy.getHarvestTarget()
             if target is not None:
-                self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
+                self._target = get_point_on_way_to(self.unit, target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
                 self._target_cargo = target.cargo
                 self.unit.move_at(self._target.copy())
                 self.strategy.data._targets[self.unit.id] = target
@@ -212,7 +220,7 @@ class DroneStateRunout(DroneState):
             target.y = max(self.unit.__class__.radius, min(theme.FIELD_HEIGHT-self.unit.__class__.radius, target.y))
             # target = self.unit.mothership()
             if target is not None:
-                self._target = get_point_on_way_to(target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
+                self._target = get_point_on_way_to(self.unit, target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
                 self.unit.move_at(self._target.copy())
             self.unit.move_at(self._target)
         elif self.unit.distance_to(self._target) <= 1.0:
