@@ -169,7 +169,7 @@ class DroneUnit(Unit):
     def move_at(self, target, speed=None):
         if not self.is_alive:
             return
-        super(DroneUnit, self).move_at(target, speed=theme.DRONE_SPEED)
+        super(DroneUnit, self).move_at(target, speed=theme.DRONE_SPEED*(0.65 + 0.35*(1.0-self._cargo.fullness)))
 
     def turn_to(self, target, speed=None):
         if not self.is_alive:
