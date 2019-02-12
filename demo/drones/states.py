@@ -62,15 +62,14 @@ class DroneStateIdle(DroneState):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
             return DroneStateRunout
         has_sources, sources = self.sources()
-        if self.unit.cargo.fullness < 0.99:
+        k = 0.75 if self.strategy._stepnum < 250 else 0.99
+        if self.unit.cargo.fullness < k:
             if has_sources:
                 return DroneStateHarvest
         if not self.strategy.unit.cargo.is_empty:
             return DroneStateUnload
         elif not has_sources and self.unit.distance_to(self.unit.mothership()) < theme.CARGO_TRANSITION_DISTANCE:
             return DroneStateNone
-        # if not has_sources:
-        #    return DroneStateUnload
         return self.__class__
 
 

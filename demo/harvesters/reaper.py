@@ -31,6 +31,7 @@ class ReaperStrategy(Strategy):
         return ReaperStrategy._data[self.unit.team]
 
     def __init__(self, *args, **kwargs):
+        self._stepnum = 0
         super(ReaperStrategy, self).__init__(*args, **kwargs)
         if ReaperStrategy._distance_max is None:
             ReaperStrategy._distance_max = math.sqrt(theme.FIELD_HEIGHT * theme.FIELD_HEIGHT + theme.FIELD_WIDTH * theme.FIELD_WIDTH)
@@ -153,6 +154,7 @@ class ReaperStrategy(Strategy):
         return self.unit.fsm_state
 
     def game_step(self, **kwargs):
+        self._stepnum = self._stepnum + 1
         super(ReaperStrategy, self).game_step(**kwargs)
 
         newState = self.fsm_state.make_transition()
