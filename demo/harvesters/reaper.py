@@ -58,7 +58,7 @@ class ReaperStrategy(Strategy):
         bmdist = b.distance_to(self.unit.mothership())
         abdist = a.distance_to(b)
         k = float(self._distance_max)
-        coef = [1.0 / distlim, 1.0]
+        coef   = [1.0 / distlim, 1.0]
         values = [dist, 1.0-b.cargo.fullness]
         return sum(map(mul, coef, values))
 
@@ -66,7 +66,7 @@ class ReaperStrategy(Strategy):
         center_of_scene = Point(theme.FIELD_WIDTH/2, theme.FIELD_HEIGHT/2)
         units = self.unit.pathfind.points
         units.sort(key=lambda u: u.distance_to(self.unit.mothership()))
-        units = [u for u in units if u != self.unit.mothership() and u != self.unit.closest_in_path]
+        units = [u for u in units if u != self.unit.mothership()]
         return units[0] if units else None
 
     def distributeHarvestSources(self, units):
@@ -84,7 +84,7 @@ class ReaperStrategy(Strategy):
         self.unit.pathfind.update_units(func=lambda u: not u.cargo.is_empty)
 
         didx = self.data._drones.index(self.unit)
-        if didx < 2:
+        if didx < 3:
             center_of_scene = self.unit.mothership().coord.copy()
             units = [p for p in self.unit.pathfind.points if p != self.unit.mothership()]
             if not units:
@@ -122,6 +122,7 @@ class ReaperStrategy(Strategy):
         return sum(map(mul, coef, values))
 
     def getUnloadTarget(self):
+        return self.unit.mothership()
         if self.data._drones.index(self.unit) < 2:
             return self.unit.mothership()
         if len([a for a in self.unit.scene.asteroids if a.cargo.payload > 0]) == 0:
@@ -156,6 +157,7 @@ class ReaperStrategy(Strategy):
 
         newState = self.fsm_state.make_transition()
         if newState != self.fsm_state.__class__:
+            self.data._targets[self.unit.id] = None
             self.unit.set_fsm_state(newState(self))
 
         if self.unit.fsm_state:
