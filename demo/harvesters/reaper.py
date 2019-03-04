@@ -14,6 +14,7 @@ from .strategies import Strategy
 class ReaperStrategy(Strategy):
     _distance_max = None
     _distance_limit = None
+    _override_state = {}
 
     # Data contains information for team. It usefull when
     # have more than one drone with that strategy
@@ -27,11 +28,10 @@ class ReaperStrategy(Strategy):
     @property
     def data(self):
         if ReaperStrategy._data.get(self.unit.team) is None:
-            ReaperStrategy._data[self.unit.team] = ReaperStrategy.Data()
+            ReaperStrategy._data[self.unit.team] = self.__class__.Data()
         return ReaperStrategy._data[self.unit.team]
 
     def __init__(self, *args, **kwargs):
-        self._stepnum = 0
         super(ReaperStrategy, self).__init__(*args, **kwargs)
         if ReaperStrategy._distance_max is None:
             ReaperStrategy._distance_max = math.sqrt(theme.FIELD_HEIGHT * theme.FIELD_HEIGHT + theme.FIELD_WIDTH * theme.FIELD_WIDTH)
@@ -154,11 +154,12 @@ class ReaperStrategy(Strategy):
         return self.unit.fsm_state
 
     def game_step(self, **kwargs):
-        self._stepnum = self._stepnum + 1
         super(ReaperStrategy, self).game_step(**kwargs)
 
         newState = self.fsm_state.make_transition()
         if newState != self.fsm_state.__class__:
+            if newState in self.__class__._override_state:
+                newState = self.__class__._override_state[newState]
             self.data._targets[self.unit.id] = None
             self.unit.set_fsm_state(newState(self))
 
