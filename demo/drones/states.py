@@ -1,16 +1,55 @@
 import math
+import random
 from astrobox.cargo import CargoTransition
 
 from robogame_engine.geometry import Point, Vector
 from robogame_engine.theme import theme
+from astrobox.guns import Projectile
+
+# Используем менее затратный алгоритм, вместо
+# использования преобразований вычислений из Vector
+def is_on_straight(frame_idx, a, b, distance_limit=None):
+    if not distance_limit:
+        distance_limit = theme.PROJECTILE_RANGE * 0.8
+
+    # Rotation matrix
+    dx = (b.x - a.x)
+    dy = (b.y - a.y)
+    angle = a.direction / 180.0 * math.pi
+    cosphi = math.cos(angle)
+    sinphi = math.sin(angle)
+
+    # CCW rotation
+    rx = (+ dx * cosphi + dy * sinphi)
+    if rx < 0.0:
+        return False
+    if rx > distance_limit:
+        return False
+    # Simple detect
+    ry = (- dx * sinphi + dy * cosphi)
+    if math.fabs(ry) < 0.01:
+        return True
+
+    ylimit = (b.__class__.radius + Projectile.radius)
+    if a.team == b.team:
+        ylimit *= 1.5
+    # Triangle similarity rule
+    # x1 / x2 = y1 / y2 = d1 / d2
+    xk = distance_limit / rx
+    # yk = ry * xk
+    return math.fabs(ry * xk) < ylimit
 
 def get_point_on_way_to(unit, target, at_distance=None):
     if at_distance is None:
         at_distance = theme.CARGO_TRANSITION_DISTANCE * 0.9
-    va = Vector.from_points(unit.coord, target.coord)
-    vb = Vector.from_direction(va.direction, at_distance)
-    vb.rotate(180.0)
-    return Point(unit.x+va.x+vb.x, unit.y+va.y+vb.y)
+    dx = target.x - unit.x
+    dy = target.y - unit.y
+    dd = math.sqrt(dx * dx + dy * dy)
+    if dd < at_distance:
+        return Point(unit.x, unit.y)
+    k = 1 - at_distance / dd
+
+    return Point(unit.x + dx * k, unit.y + dy * k)
 
 class DroneState(object):
     def __init__(self, strategy):
@@ -25,6 +64,10 @@ class DroneState(object):
     @property
     def unit(self):
         return self.strategy.unit
+
+    @property
+    def unit_or_group(self):
+        return self.unit.group or self.unit
 
     @property
     def scene(self):
@@ -62,7 +105,7 @@ class DroneStateIdle(DroneState):
         if self.unit.health < 0.6 and self.unit.distance_to(self.unit.mothership()) > theme.MOTHERSHIP_HEALING_DISTANCE:
             return DroneStateRunout
         has_sources, sources = self.sources()
-        k = 0.75 if self.strategy._stepnum < 250 else 0.99
+        k = 0.75 if self.unit.scene.game_frame < 250 else 0.99
         if self.unit.cargo.fullness < k:
             if has_sources:
                 return DroneStateHarvest
@@ -80,6 +123,8 @@ class DroneStateUnload(DroneState):
         self._target_cargo = None
         self._transition = None
         super(DroneStateUnload, self).__init__(strategy)
+        if self.unit.group:
+            self.unit.group.separate()
 
     def has_any_enemy_going_harvest(self):
         if not self._target_point:
@@ -118,7 +163,7 @@ class DroneStateUnload(DroneState):
             if target is None:
                 target = self.unit.mothership()
             self.unit.turn_to(target)
-        elif self.unit.distance_to(self._target_point) <= 1.0:
+        elif self.unit.is_arrived():
             self._transition = CargoTransition(cargo_from=self.unit.cargo, cargo_to=self._target_cargo)
 
 
@@ -172,12 +217,12 @@ class DroneStateHarvest(DroneState):
             if target is not None:
                 self._target = get_point_on_way_to(self.unit, target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
                 self._target_cargo = target.cargo
-                self.unit.move_at(self._target.copy())
+                self.unit_or_group.move_at(self._target.copy(), turn_to=self.unit.mothership())
                 self.strategy.data._targets[self.unit.id] = target
             elif self._transition is not None:
                 return
         uclosest = self.unit.closest_in_path
-        if self._transition is None and self._target and int(self.unit.distance_to(self._target)) <= 1:
+        if self._transition is None and self._target_cargo and self.unit.is_arrived():
             print(u"\u001b[36;1mNew cargo transition: {} -> {}\u001b[0m".format(self._target_cargo.owner.id,
                                                                                 self.unit.id))
             self._transition = CargoTransition(cargo_from=self._target_cargo, cargo_to=self.unit.cargo)
@@ -198,6 +243,8 @@ class DroneStateAttack(DroneState):
 class DroneStateRunout(DroneState):
     def __init__(self, strategy):
         super(DroneStateRunout, self).__init__(strategy)
+        if self.self.unit.group:
+            self.unit.group.separate()
         self._target = None
         self._directions = [-25, 25]
         random.shuffle(self._directions)
@@ -208,7 +255,6 @@ class DroneStateRunout(DroneState):
         return self.__class__
 
     def game_step(self):
-        # FIXME: when stuck on borders
         if self._target is None:
             v = Vector.from_points(self.unit.coord, self.unit.mothership().coord)
             nextdir = self._directions.pop(0)
@@ -220,8 +266,8 @@ class DroneStateRunout(DroneState):
             # target = self.unit.mothership()
             if target is not None:
                 self._target = get_point_on_way_to(self.unit, target, theme.CARGO_TRANSITION_DISTANCE * 0.9)
-                self.unit.move_at(self._target.copy())
-            self.unit.move_at(self._target)
+                self.unit_or_group.move_at(self._target.copy())
+            self.unit_or_group.move_at(self._target)
         elif self.unit.distance_to(self._target) <= 1.0:
             self._target = None
 

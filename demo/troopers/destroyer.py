@@ -2,19 +2,7 @@
 
 from demo.harvesters.strategies import StrategyHarvesting, StrategyDestroyer, DroneUnitWithStrategies
 from demo.troopers.events import EventUnitDamage
-
-
-# from robogame_engine.user_interface import Lines
-def is_on_straight(a, b):
-    v = Vector.from_points(a.coord, b.coord)
-    v.rotate(-a.direction)
-    if math.fabs(v.direction) < 90.0:
-        a = v.direction / 180.0 * math.pi
-        limit = (b.__class__.radius + Projectile.radius)
-        if a.team == b.team:
-            limit *= 1.5
-        return math.fabs(a.distance_to(b) * math.sin(a)) < limit
-    return False
+from demo.drones.states import is_on_straight
 
 class DestroyerDrone(DroneUnitWithStrategies):
     _hunters = []
@@ -49,7 +37,7 @@ class DestroyerDrone(DroneUnitWithStrategies):
                 self.append_strategy(StrategyHarvesting(unit=self))
 
     def gun_fire(self):
-        if not self.unit.have_gun:
+        if not self.have_gun:
             return
 
         def target_drones():
