@@ -87,6 +87,10 @@ class DroneUnit(Unit):
         return 0 if self.__health == 0 else self.__health/theme.DRONE_MAX_SHIELD
 
     @property
+    def group(self):
+        return None
+
+    @property
     def have_gun(self):
         return self.__gun is not None
 
