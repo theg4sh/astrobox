@@ -35,19 +35,33 @@ class SpaceField(Scene):
     # _HONEY_SPEED_FACTOR = 0.02
 
     def __init__(self, *args, **kwargs):
+        self.__game_frame = 0
         self.__motherships = {}
         self.__asteroids = []
         self.__drones = []
         self.__max_elerium = 0.0
+        self.__allow_shooting = theme.DRONES_CAN_FIGHT
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(SpaceField, self).__init__(*args, **kwargs)
 
     @property
+    def allow_shooting(self):
+        return self.__allow_shooting
+
+    # Возвращается текущий фрейм игры, предоставляя возможность оптимизации
+    # вычислений, требуемых одного прогона алгоритма за один такт игры
+    @property
+    def game_frame(self):
+        return self.__game_frame
+
+    @property
     def max_elerium(self):
         return self.__max_elerium
 
-    def prepare(self, asteroids_count=5):
+    def prepare(self, asteroids_count=5, allow_shooting=False):
+        theme.DRONES_CAN_FIGHT=allow_shooting
+        self.__allow_shooting = allow_shooting
         self._fill_space(
             asteroids_count=asteroids_count
         )
@@ -172,3 +186,7 @@ class SpaceField(Scene):
     @property
     def motherships(self):
         return self.get_objects_by_type(MotherShip)
+
+    def game_step(self):
+        self.__game_frame += 1
+        super(SpaceField, self).game_step()
