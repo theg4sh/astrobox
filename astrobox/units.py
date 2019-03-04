@@ -73,9 +73,9 @@ class DroneUnit(Unit):
         self.__mothership = None
         self._cargo = Cargo(self, payload=0, max_payload=theme.DRONE_CARGO_PAYLOAD)
         self.__gun = None
-        if theme.DRONES_CAN_FIGHT:
-            self.__gun = PlasmaGun(self)
         self.__health = theme.DRONE_MAX_SHIELD
+        self.__move_target = None
+        self.__turn_to = None
         super(DroneUnit, self).__init__(**kwargs)
 
         self.__dead_flight_speed = theme.DRONE_DEAD_SPEED
@@ -149,10 +149,25 @@ class DroneUnit(Unit):
         self.__dead_flight_speed -= theme.DRONE_DEAD_SPEED_DECELERATION*self.scene.game_speed
         super(DroneUnit, self).game_step();
 
+    def is_arrived(self):
+        if not self.__move_target:
+            return True
+        dx = self.__move_target.x - self.x
+        dy = self.__move_target.y - self.y
+        #print(self.__move_target, self.coord, math.fabs(dx), math.fabs(dy))
+        return math.fabs(dx) < 1.0 and math.fabs(dy) < 1.0
+
     def game_step(self):
         if not self.is_alive:
             self.__dead_game_step();
             return;
+        # Turn when arrived
+        if self.__move_target and self.is_arrived():
+            self.__move_target = None
+            if self.__turn_to:
+                self.turn_to(self.__turn_to)
+                self.__turn_to = None
+
         if self.mothership() and self.mothership().is_alive and \
                 self.distance_to(self.mothership().coord) < theme.MOTHERSHIP_HEALING_DISTANCE:
             self.__heal_taken(theme.MOTHERSHIP_HEALING_RATE)
@@ -162,14 +177,22 @@ class DroneUnit(Unit):
             self.gun.game_step()
         super(DroneUnit, self).game_step()
 
-
     def on_born(self):
+        if (theme.DRONES_CAN_FIGHT or self.scene.allow_shooting) and self.__gun is None:
+            self.__gun = PlasmaGun(self)
+        #print(theme.DRONES_CAN_FIGHT, self.scene.allow_shooting)
         super(DroneUnit, self).on_born()
 
-    def move_at(self, target, speed=None):
+    @property
+    def current_speed(self):
+        return theme.DRONE_SPEED*(0.65 + 0.35*(1.0-self._cargo.fullness))
+
+    def move_at(self, target, turn_to=None, speed=None):
         if not self.is_alive:
             return
-        super(DroneUnit, self).move_at(target, speed=theme.DRONE_SPEED*(0.65 + 0.35*(1.0-self._cargo.fullness)))
+        self.__move_target = target
+        self.__turn_to = turn_to
+        super(DroneUnit, self).move_at(target, speed=self.current_speed)
 
     def turn_to(self, target, speed=None):
         if not self.is_alive:
