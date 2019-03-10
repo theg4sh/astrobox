@@ -158,7 +158,6 @@ class DroneUnit(Unit):
             return True
         dx = self.__move_target.x - self.x
         dy = self.__move_target.y - self.y
-        #print(self.__move_target, self.coord, math.fabs(dx), math.fabs(dy))
         return math.fabs(dx) < 1.0 and math.fabs(dy) < 1.0
 
     def game_step(self):
@@ -182,7 +181,7 @@ class DroneUnit(Unit):
         super(DroneUnit, self).game_step()
 
     def on_born(self):
-        if (theme.DRONES_CAN_FIGHT or self.scene.allow_shooting) and self.__gun is None:
+        if self.scene.allow_shooting and self.__gun is None:
             self.__gun = PlasmaGun(self)
         #print(theme.DRONES_CAN_FIGHT, self.scene.allow_shooting)
         super(DroneUnit, self).on_born()

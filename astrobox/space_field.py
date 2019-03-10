@@ -40,7 +40,7 @@ class SpaceField(Scene):
         self.__asteroids = []
         self.__drones = []
         self.__max_elerium = 0.0
-        self.__allow_shooting = theme.DRONES_CAN_FIGHT
+        self.__allow_shooting = False
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(SpaceField, self).__init__(*args, **kwargs)
