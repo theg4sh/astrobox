@@ -48,7 +48,6 @@ def get_point_on_way_to(unit, target, at_distance=None):
     if dd < at_distance:
         return Point(unit.x, unit.y)
     k = 1 - at_distance / dd
-
     return Point(unit.x + dx * k, unit.y + dy * k)
 
 class DroneState(object):
@@ -243,7 +242,7 @@ class DroneStateAttack(DroneState):
 class DroneStateRunout(DroneState):
     def __init__(self, strategy):
         super(DroneStateRunout, self).__init__(strategy)
-        if self.self.unit.group:
+        if self.unit.group:
             self.unit.group.separate()
         self._target = None
         self._directions = [-25, 25]

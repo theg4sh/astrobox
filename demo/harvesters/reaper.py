@@ -198,5 +198,8 @@ class ReaperDrone(DroneUnitWithStrategies):
     def on_born(self):
         super(ReaperDrone, self).on_born()
         self._strategy = self._strategy_class(unit=self)
-        self.set_fsm_state(DroneStateIdle(self._strategy))
+        newState = DroneStateIdle
+        if newState in self._strategy._override_state:
+            newState = self._strategy._override_state[newState]
+        self.set_fsm_state(newState(self._strategy))
         self.append_strategy(self._strategy)
